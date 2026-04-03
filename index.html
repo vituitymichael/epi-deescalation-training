@@ -672,10 +672,10 @@
                 <!-- Female Patient -->
                 <div class="patient-card" onclick="startSession('female')">
                     <div class="patient-card-image">
-                        <img src="images/Avatar-Gabby.png" alt="Gabby" style="width:100%; height:100%; object-fit:cover;">
+                        <img src="images/Avatar-Mari.png" alt="Mari" style="width:100%; height:100%; object-fit:cover;">
                     </div>
                     <div class="patient-card-body">
-                        <h3>Gabby</h3>
+                        <h3>Mari</h3>
                         <p class="scenario">
                             A patient presenting with acute agitation and escalating distress in the ED.
                             Expressing frustration about wait times, feeling dismissed, and becoming increasingly confrontational with staff.
@@ -688,10 +688,10 @@
                 <!-- Male Patient -->
                 <div class="patient-card" onclick="startSession('male')">
                     <div class="patient-card-image">
-                        <img src="images/Avatar-Darius.png" alt="Darius" style="width:100%; height:100%; object-fit:cover;">
+                        <img src="images/Avatar-Dwan.png" alt="Dwan" style="width:100%; height:100%; object-fit:cover;">
                     </div>
                     <div class="patient-card-body">
-                        <h3>Darius</h3>
+                        <h3>Dwan</h3>
                         <p class="scenario">
                             A patient presenting with acute agitation and escalating distress in the ED.
                             Expressing frustration about wait times, feeling dismissed, and becoming increasingly confrontational with staff.
@@ -818,14 +818,14 @@
             PROXY_URL: 'https://tavus-proxy.michaelszapkiw.workers.dev/',
             patients: {
                 female: {
-                    name: 'Gabby',
+                    name: 'Mari',
                     replica_id: 'r291e545fd67',
-                    persona_id: 'pd4f442c901e'
+                    persona_id: 'p2fe3afda126'
                 },
                 male: {
-                    name: 'Darius',
+                    name: 'Dwan',
                     replica_id: 'r4ba1277e4fb',
-                    persona_id: 'pd4f442c901e'
+                    persona_id: 'p25193cdc2be'
                 }
             }
         };
@@ -833,6 +833,7 @@
         let timerInterval = null;
         let sessionSeconds = 0;
         let currentPatient = null;
+        let currentConversationId = null;
 
         // ─── SCREEN NAVIGATION ───
         function showHome() {
@@ -915,7 +916,8 @@
                     },
                     body: JSON.stringify({
                         replica_id: currentPatient.replica_id,
-                        persona_id: currentPatient.persona_id
+                        persona_id: currentPatient.persona_id,
+                        custom_greeting: "I've been lying here in pain for hours. Nobody seems to think that matters. When in the world am I getting help around here?!"
                     })
                 });
 
@@ -930,6 +932,7 @@
                 const data = JSON.parse(responseText);
 
                 if (data.conversation_url) {
+                    currentConversationId = data.conversation_id;
                     showStatus(`Got conversation URL, loading video...`);
                     statusEl.innerHTML = `
                         <iframe
@@ -959,8 +962,29 @@
         }
 
         // ─── END SESSION ───
-        function endSession() {
+        async function endSession() {
             stopTimer();
+
+            // Kill the iframe immediately to stop video/audio
+            document.getElementById('session-video-area').innerHTML = '';
+
+            // End the conversation on Tavus backend
+            if (currentConversationId) {
+                try {
+                    await fetch(CONFIG.PROXY_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'end',
+                            conversation_id: currentConversationId
+                        })
+                    });
+                } catch (err) {
+                    console.error('Failed to end conversation:', err);
+                }
+                currentConversationId = null;
+            }
+
             document.getElementById('results-patient-name').textContent = currentPatient.name;
 
             // TODO: Replace with actual perception_analysis results from Tavus API
