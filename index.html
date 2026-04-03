@@ -814,9 +814,8 @@
         })();
 
         // ─── CONFIG ───
-        // Replace these with actual Tavus replica/persona IDs when ready
         const CONFIG = {
-            API_KEY: '710f3af7866d4227a978fe71b018c568',
+            PROXY_URL: 'https://tavus-proxy.michaelszapkiw.workers.dev/',
             patients: {
                 female: {
                     name: 'Gabby',
@@ -909,11 +908,10 @@
             try {
                 showStatus(`Calling Tavus API for ${currentPatient.name}...`);
 
-                const response = await fetch('https://api.tavus.io/v2/conversations', {
+                const response = await fetch(CONFIG.PROXY_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-api-key': CONFIG.API_KEY
                     },
                     body: JSON.stringify({
                         replica_id: currentPatient.replica_id,
