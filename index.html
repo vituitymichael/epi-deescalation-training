@@ -59,7 +59,7 @@
         }
 
         .logo img {
-            height: 40px;
+            height: 32px;
             width: auto;
         }
 
@@ -451,6 +451,68 @@
             color: #c62828;
         }
 
+        .score-value.na {
+            background: #eceff1;
+            color: #78909c;
+        }
+
+        .overall-score {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .overall-score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .overall-score-circle.good {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 4px solid #a5d6a7;
+        }
+
+        .overall-score-circle.fair {
+            background: #fff3e0;
+            color: #e65100;
+            border: 4px solid #ffcc80;
+        }
+
+        .overall-score-circle.poor {
+            background: #fce4ec;
+            color: #c62828;
+            border: 4px solid #ef9a9a;
+        }
+
+        .overall-score-circle.none {
+            background: #eceff1;
+            color: #78909c;
+            border: 4px solid #b0bec5;
+        }
+
+        .overall-score-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .session-warning {
+            background: #fff3e0;
+            border: 1px solid #ffcc80;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            color: #e65100;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
         .btn-return {
             display: block;
             width: 100%;
@@ -725,50 +787,13 @@
                 <p>Here's how you performed with <strong id="results-patient-name">Maria</strong></p>
             </div>
 
+            <div id="results-warning"></div>
+
+            <div class="overall-score" id="overall-score"></div>
+
             <div class="results-card">
                 <h3>Ten Commandments of De-escalation</h3>
-                <div id="results-scores">
-                    <div class="score-row">
-                        <span class="score-label"><strong>I.</strong> Non-Provocative Demeanor &mdash; Stay calm, soft-spoken, empathic</span>
-                        <span class="score-value">Yes</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>II.</strong> Respect Personal Space &mdash; Keep 2&times; arm's length distance</span>
-                        <span class="score-value">Yes</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>III.</strong> Establish Verbal Contact &mdash; Introduce yourself, state safety goal</span>
-                        <span class="score-value partial">Partially</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>IV.</strong> Be Concise &mdash; Short phrases, repeat key points</span>
-                        <span class="score-value">Yes</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>V.</strong> Identify Wants &amp; Feelings &mdash; Ask what they want, how they feel</span>
-                        <span class="score-value">Yes</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>VI.</strong> Listen Actively &mdash; Don't argue, reflect back what you hear</span>
-                        <span class="score-value partial">Partially</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>VII.</strong> Set Limits &amp; Offer Choices &mdash; Clear boundaries with alternatives</span>
-                        <span class="score-value">Yes</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>VIII.</strong> Agree or Agree to Disagree &mdash; Find common ground</span>
-                        <span class="score-value">Yes</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>IX.</strong> Prepared Show of Support &mdash; Team visible but non-threatening</span>
-                        <span class="score-value missed">No</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label"><strong>X.</strong> Debrief Intent &mdash; Communicate next steps clearly</span>
-                        <span class="score-value">Yes</span>
-                    </div>
-                </div>
+                <div id="results-scores"></div>
             </div>
 
             <button class="btn-return" onclick="showHome()">Return to Home</button>
@@ -847,6 +872,20 @@
         let sessionSeconds = 0;
         let currentPatient = null;
         let currentConversationId = null;
+        let sessionConnected = false;
+
+        const COMMANDMENTS = [
+            { num: 'I',    name: 'Non-Provocative Demeanor',    desc: 'Stay calm, soft-spoken, empathic' },
+            { num: 'II',   name: 'Respect Personal Space',      desc: 'Keep 2\u00d7 arm\u2019s length distance' },
+            { num: 'III',  name: 'Establish Verbal Contact',     desc: 'Introduce yourself, state safety goal' },
+            { num: 'IV',   name: 'Be Concise',                   desc: 'Short phrases, repeat key points' },
+            { num: 'V',    name: 'Identify Wants & Feelings',    desc: 'Ask what they want, how they feel' },
+            { num: 'VI',   name: 'Listen Actively',              desc: "Don\u2019t argue, reflect back what you hear" },
+            { num: 'VII',  name: 'Set Limits & Offer Choices',   desc: 'Clear boundaries with alternatives' },
+            { num: 'VIII', name: 'Agree or Agree to Disagree',   desc: 'Find common ground' },
+            { num: 'IX',   name: 'Prepared Show of Support',     desc: 'Team visible but non-threatening' },
+            { num: 'X',    name: 'Debrief Intent',               desc: 'Communicate next steps clearly' }
+        ];
 
         // ─── SCREEN NAVIGATION ───
         function showHome() {
@@ -897,6 +936,7 @@
         // ─── START SESSION ───
         async function startSession(patientKey) {
             currentPatient = CONFIG.patients[patientKey];
+            sessionConnected = false;
             document.getElementById('session-patient-name').textContent = currentPatient.name;
 
             showSession();
@@ -946,6 +986,7 @@
 
                 if (data.conversation_url) {
                     currentConversationId = data.conversation_id;
+                    sessionConnected = true;
                     showStatus(`Got conversation URL, loading video...`);
                     statusEl.innerHTML = `
                         <iframe
@@ -999,10 +1040,65 @@
             }
 
             document.getElementById('results-patient-name').textContent = currentPatient.name;
-
-            // TODO: Replace with actual perception_analysis results from Tavus API
-            // For now showing placeholder scores
+            renderResults();
             showResults();
+        }
+
+        function renderResults() {
+            const warningEl = document.getElementById('results-warning');
+            const overallEl = document.getElementById('overall-score');
+            const scoresEl = document.getElementById('results-scores');
+
+            const validSession = sessionConnected && sessionSeconds >= 30;
+
+            // Warning if session didn't really happen
+            if (!validSession) {
+                warningEl.innerHTML = `<div class="session-warning">
+                    Session did not complete${!sessionConnected ? ' &mdash; unable to connect to patient' : ' &mdash; session was too short (under 30 seconds)'}.
+                    Scores cannot be assessed. Try again with a full session.
+                </div>`;
+            } else {
+                warningEl.innerHTML = '';
+            }
+
+            // Build score rows
+            // TODO: Replace with real Tavus perception_analysis_queries results
+            let rows = '';
+            let totalPoints = 0;
+            const maxPoints = COMMANDMENTS.length * 10;
+
+            COMMANDMENTS.forEach(cmd => {
+                let rating, cssClass, points;
+                if (!validSession) {
+                    rating = 'N/A';
+                    cssClass = 'na';
+                    points = 0;
+                } else {
+                    // Placeholder: will be replaced with real API scoring
+                    rating = 'Pending';
+                    cssClass = 'na';
+                    points = 0;
+                }
+                totalPoints += points;
+                rows += `<div class="score-row">
+                    <span class="score-label"><strong>${cmd.num}.</strong> ${cmd.name} &mdash; ${cmd.desc}</span>
+                    <span class="score-value ${cssClass}">${rating}</span>
+                </div>`;
+            });
+
+            scoresEl.innerHTML = rows;
+
+            // Overall score
+            const pct = validSession ? Math.round((totalPoints / maxPoints) * 100) : 0;
+            let circleClass = 'none';
+            if (validSession) {
+                circleClass = pct >= 70 ? 'good' : pct >= 40 ? 'fair' : 'poor';
+            }
+
+            overallEl.innerHTML = `
+                <div class="overall-score-circle ${circleClass}">${pct}%</div>
+                <div class="overall-score-label">${validSession ? 'Overall Score' : 'No Session Data'}</div>
+            `;
         }
     </script>
 
