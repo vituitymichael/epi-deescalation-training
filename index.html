@@ -641,21 +641,26 @@
 
         /* ─── ABOUT TEASER ─── */
         .about-teaser {
-            max-width: 680px;
+            max-width: 780px;
             margin: 3rem auto 1rem;
             padding: 2rem 2.5rem;
-            text-align: center;
             border-top: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
         }
 
-        .about-teaser .owl-icon {
-            margin-bottom: 0.75rem;
+        .about-teaser .owl-mascot {
+            flex-shrink: 0;
         }
 
-        .about-teaser .owl-icon img {
-            height: 36px;
+        .about-teaser .owl-mascot img {
+            height: 140px;
             width: auto;
-            opacity: 0.8;
+        }
+
+        .about-teaser .about-text {
+            text-align: left;
         }
 
         .about-teaser h3 {
@@ -677,6 +682,16 @@
             font-weight: 500;
             margin-top: 0.75rem;
             font-size: 0.95rem;
+        }
+
+        @media (max-width: 540px) {
+            .about-teaser {
+                flex-direction: column;
+                text-align: center;
+            }
+            .about-teaser .about-text {
+                text-align: center;
+            }
         }
 
         /* ─── RESPONSIVE ─── */
@@ -843,14 +858,16 @@
 
     <!-- ABOUT TEASER (shown only on home screen) -->
     <div class="about-teaser" id="about-teaser">
-        <div class="owl-icon"><img src="images/LOGO-OWLedge-Lab-FULL-REZ-v3-PNG.png" alt="Owledge Lab owl"></div>
-        <h3>About Owledge Lab</h3>
-        <p>
-            The EPI De-escalation Training is just the beginning. Owledge Lab is building a library of
-            AI-powered practice scenarios to include clinical communication and crisis response,
-            leadership conversations and beyond. Real practice, real feedback, zero risk.
-        </p>
-        <p class="tagline">Where practice meets knowledge.</p>
+        <div class="owl-mascot"><img src="images/owledge-owl.png" alt="Owledge the owl"></div>
+        <div class="about-text">
+            <h3>About Owledge Lab</h3>
+            <p>
+                The EPI De-escalation Training is just the beginning. Owledge Lab is building a library of
+                AI-powered practice scenarios to include clinical communication and crisis response,
+                leadership conversations and beyond. Real practice, real feedback, zero risk.
+            </p>
+            <p class="tagline">Where practice meets knowledge.</p>
+        </div>
     </div>
 
     <!-- FOOTER (shown only on home screen) -->
