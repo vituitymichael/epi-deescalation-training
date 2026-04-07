@@ -6,8 +6,8 @@
     <title>EPI De-escalation Training | Owledge Lab</title>
     <style>
         :root {
-            --vituity-orange: #F49100;
-            --vituity-orange-dark: #d97e00;
+            --owledge-gold: #B8860B;
+            --owledge-gold-dark: #996F0A;
             --vituity-navy: #1B2A4A;
             --vituity-dark: #1a1a2e;
             --text-primary: #2c3e50;
@@ -39,7 +39,7 @@
         /* ─── HEADER ─── */
         header {
             background: white;
-            border-bottom: 3px solid var(--vituity-orange);
+            border-bottom: 3px solid var(--owledge-gold);
             padding: 0 2rem;
             height: 64px;
             display: flex;
@@ -74,8 +74,8 @@
         }
 
         .header-nav a:hover {
-            color: var(--vituity-orange);
-            background: rgba(244, 145, 0, 0.08);
+            color: var(--owledge-gold);
+            background: rgba(184, 134, 11, 0.08);
         }
 
         /* ─── MAIN CONTENT ─── */
@@ -140,7 +140,7 @@
             transform: translateX(-50%);
             width: 40px;
             height: 3px;
-            background: var(--vituity-orange);
+            background: var(--owledge-gold);
             border-radius: 2px;
         }
 
@@ -164,7 +164,7 @@
         .patient-card:hover {
             box-shadow: var(--shadow-lg);
             transform: translateY(-4px);
-            border-color: var(--vituity-orange);
+            border-color: var(--owledge-gold);
         }
 
         .patient-card-image {
@@ -219,7 +219,7 @@
             display: block;
             width: 100%;
             padding: 0.75rem;
-            background: var(--vituity-orange);
+            background: var(--owledge-gold);
             color: white;
             border: none;
             border-radius: 8px;
@@ -231,7 +231,7 @@
         }
 
         .btn-begin:hover {
-            background: var(--vituity-orange-dark);
+            background: var(--owledge-gold-dark);
         }
 
         .session-duration {
@@ -280,7 +280,7 @@
         }
 
         .step-arrow {
-            color: var(--vituity-orange);
+            color: var(--owledge-gold);
             font-size: 1.5rem;
             font-weight: 700;
             flex-shrink: 0;
@@ -517,7 +517,7 @@
             display: block;
             width: 100%;
             padding: 0.85rem;
-            background: var(--vituity-orange);
+            background: var(--owledge-gold);
             color: white;
             border: none;
             border-radius: 8px;
@@ -529,7 +529,7 @@
         }
 
         .btn-return:hover {
-            background: var(--vituity-orange-dark);
+            background: var(--owledge-gold-dark);
         }
 
         /* ─── LOGIN OVERLAY ─── */
@@ -598,7 +598,7 @@
 
         .login-box input[type="text"]:focus,
         .login-box input[type="password"]:focus {
-            border-color: var(--vituity-orange);
+            border-color: var(--owledge-gold);
         }
 
         .login-btn {
@@ -607,14 +607,14 @@
             font-size: 16px;
             font-weight: 600;
             color: #fff;
-            background: var(--vituity-orange);
+            background: var(--owledge-gold);
             border: none;
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.2s ease;
         }
 
-        .login-btn:hover { background: var(--vituity-orange-dark); }
+        .login-btn:hover { background: var(--owledge-gold-dark); }
 
         .login-error {
             margin-top: 12px;
@@ -637,6 +637,42 @@
             color: #9ba8b7;
             font-size: 0.8rem;
             border-top: 1px solid var(--border-light);
+        }
+
+        /* ─── ABOUT TEASER ─── */
+        .about-teaser {
+            max-width: 680px;
+            margin: 3rem auto 1rem;
+            padding: 2rem 2.5rem;
+            text-align: center;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .about-teaser .owl-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .about-teaser h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--vituity-navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .about-teaser p {
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .about-teaser .tagline {
+            font-style: italic;
+            color: var(--owledge-gold);
+            font-weight: 500;
+            margin-top: 0.75rem;
+            font-size: 0.95rem;
         }
 
         /* ─── RESPONSIVE ─── */
@@ -801,6 +837,18 @@
 
     </main>
 
+    <!-- ABOUT TEASER (shown only on home screen) -->
+    <div class="about-teaser" id="about-teaser">
+        <div class="owl-icon">&#x1F989;</div>
+        <h3>About Owledge Lab</h3>
+        <p>
+            EPI de-escalation is just the beginning. Owledge Lab is building a library of
+            AI-powered practice scenarios &mdash; from clinical communication and crisis response
+            to leadership conversations and beyond. Real practice, real feedback, zero risk.
+        </p>
+        <p class="tagline">Where practice meets knowledge.</p>
+    </div>
+
     <!-- FOOTER (shown only on home screen) -->
     <footer id="footer">
         &copy; 2026 Owledge Lab &mdash; Where practice meets knowledge.
@@ -892,6 +940,7 @@
             document.getElementById('home-screen').style.display = 'flex';
             document.getElementById('session-screen').style.display = 'none';
             document.getElementById('results-screen').style.display = 'none';
+            document.getElementById('about-teaser').style.display = 'block';
             document.getElementById('footer').style.display = 'block';
             stopTimer();
         }
@@ -900,6 +949,7 @@
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('session-screen').style.display = 'flex';
             document.getElementById('results-screen').style.display = 'none';
+            document.getElementById('about-teaser').style.display = 'none';
             document.getElementById('footer').style.display = 'none';
         }
 
@@ -907,6 +957,7 @@
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('session-screen').style.display = 'none';
             document.getElementById('results-screen').style.display = 'flex';
+            document.getElementById('about-teaser').style.display = 'none';
             document.getElementById('footer').style.display = 'block';
         }
 
