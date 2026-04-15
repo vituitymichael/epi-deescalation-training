@@ -345,15 +345,91 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
+            position: relative;
         }
 
-        .session-video-area iframe {
+        .session-iframe-container {
             width: 100%;
             height: 100%;
             max-width: 1200px;
             max-height: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .session-iframe-container iframe {
+            width: 100%;
+            height: 100%;
             border: none;
             border-radius: var(--radius);
+        }
+
+        /* Branded loading overlay (covers vendor loader) */
+        .session-loading-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1B2A4A 0%, #2c3e6b 50%, #1a2540 100%);
+            color: white;
+            z-index: 10;
+            transition: opacity 0.6s ease;
+        }
+
+        .session-loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .session-loading-overlay img {
+            height: 120px;
+            width: auto;
+            margin-bottom: 1.25rem;
+            animation: owl-pulse 2.4s ease-in-out infinite;
+        }
+
+        .session-loading-overlay h3 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.4rem;
+        }
+
+        .session-loading-overlay p {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        @keyframes owl-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.92; }
+            50%      { transform: scale(1.05); opacity: 1; }
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .loading-dots span {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: loading-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loading-bounce {
+            0%, 80%, 100% { transform: scale(0.3); opacity: 0.4; }
+            40%           { transform: scale(1);   opacity: 1; }
         }
 
         .session-placeholder {
@@ -511,6 +587,45 @@
             color: #e65100;
             font-size: 0.9rem;
             text-align: center;
+        }
+
+        /* Analyzing overlay on results screen */
+        .analyzing-overlay {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .analyzing-overlay img {
+            height: 110px;
+            width: auto;
+            margin-bottom: 1.25rem;
+            animation: owl-pulse 2.4s ease-in-out infinite;
+        }
+
+        .analyzing-overlay h3 {
+            color: var(--vituity-navy);
+            font-size: 1.35rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .analyzing-overlay p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 460px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .results-footnote {
+            text-align: center;
+            font-size: 0.78rem;
+            color: #9ba8b7;
+            font-style: italic;
+            max-width: 600px;
+            margin: 1.5rem auto 0;
+            padding: 0 1rem;
+            line-height: 1.5;
         }
 
         .btn-return {
@@ -825,33 +940,49 @@
                 <button class="btn-end-session" onclick="endSession()">End Session &amp; Get Score</button>
             </div>
             <div class="session-video-area" id="session-video-area">
-                <div class="session-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                        <rect x="2" y="4" width="20" height="14" rx="2"/>
-                        <path d="M12 18v3M8 21h8"/>
-                    </svg>
-                    <p>Connecting to patient...</p>
+                <div class="session-iframe-container" id="session-iframe-container"></div>
+                <div class="session-loading-overlay" id="session-loading-overlay">
+                    <img src="images/owledge-owl.png" alt="Owledge Lab">
+                    <h3 id="session-loading-title">Preparing your session</h3>
+                    <p>
+                        <span id="session-loading-message">Connecting to your patient</span><span class="loading-dots"><span></span><span></span><span></span></span>
+                    </p>
                 </div>
             </div>
         </div>
 
         <!-- ════════ RESULTS SCREEN ════════ -->
         <div id="results-screen">
-            <div class="results-header">
-                <h2>Session Complete</h2>
-                <p>Here's how you performed with <strong id="results-patient-name">Maria</strong></p>
+
+            <!-- Analyzing overlay (shown while polling for scores) -->
+            <div class="analyzing-overlay" id="analyzing-overlay">
+                <img src="images/owledge-owl.png" alt="Owledge Lab">
+                <h3>Analyzing your session<span class="loading-dots" style="color: var(--vituity-navy);"><span></span><span></span><span></span></span></h3>
+                <p>Reviewing your performance across the Ten Commandments of De-escalation. This usually takes under a minute.</p>
             </div>
 
-            <div id="results-warning"></div>
+            <!-- Actual results (revealed once scoring completes) -->
+            <div id="results-content" style="display: none;">
+                <div class="results-header">
+                    <h2>Session Complete</h2>
+                    <p>Here's how you performed with <strong id="results-patient-name">Maria</strong></p>
+                </div>
 
-            <div class="overall-score" id="overall-score"></div>
+                <div id="results-warning"></div>
 
-            <div class="results-card">
-                <h3>Ten Commandments of De-escalation</h3>
-                <div id="results-scores"></div>
+                <div class="overall-score" id="overall-score"></div>
+
+                <div class="results-card">
+                    <h3>Ten Commandments of De-escalation</h3>
+                    <div id="results-scores"></div>
+                </div>
+
+                <button class="btn-return" onclick="showHome()">Return to Home</button>
+
+                <p class="results-footnote">
+                    Note: Commandments II (Personal Space) and IX (Prepared Show of Support) are evaluated using video-adapted criteria, since this training uses a remote video format. In-person training uses different observable behaviors.
+                </p>
             </div>
-
-            <button class="btn-return" onclick="showHome()">Return to Home</button>
         </div>
 
     </main>
@@ -943,17 +1074,29 @@
         let currentConversationId = null;
         let sessionConnected = false;
 
+        // Each commandment pairs with an observable yes/no query for the perception model.
+        // Keep the `query` text stable once the perception model has been tuned against it.
         const COMMANDMENTS = [
-            { num: 'I',    name: 'Non-Provocative Demeanor',    desc: 'Stay calm, soft-spoken, empathic' },
-            { num: 'II',   name: 'Respect Personal Space',      desc: 'Keep 2\u00d7 arm\u2019s length distance' },
-            { num: 'III',  name: 'Establish Verbal Contact',     desc: 'Introduce yourself, state safety goal' },
-            { num: 'IV',   name: 'Be Concise',                   desc: 'Short phrases, repeat key points' },
-            { num: 'V',    name: 'Identify Wants & Feelings',    desc: 'Ask what they want, how they feel' },
-            { num: 'VI',   name: 'Listen Actively',              desc: "Don\u2019t argue, reflect back what you hear" },
-            { num: 'VII',  name: 'Set Limits & Offer Choices',   desc: 'Clear boundaries with alternatives' },
-            { num: 'VIII', name: 'Agree or Agree to Disagree',   desc: 'Find common ground' },
-            { num: 'IX',   name: 'Prepared Show of Support',     desc: 'Team visible but non-threatening' },
-            { num: 'X',    name: 'Debrief Intent',               desc: 'Communicate next steps clearly' }
+            { num: 'I',    name: 'Non-Provocative Demeanor',    desc: 'Stay calm, soft-spoken, empathic',
+              query: 'Did the clinician maintain calm, open body language (hands visible, relaxed posture, no clenched fists or aggressive gestures) throughout the conversation?' },
+            { num: 'II',   name: 'Respect Personal Space',      desc: 'Keep 2\u00d7 arm\u2019s length distance',
+              query: 'Did the clinician avoid interrupting or talking over the patient, giving them room to speak?' },
+            { num: 'III',  name: 'Establish Verbal Contact',    desc: 'Introduce yourself, state safety goal',
+              query: 'Did the clinician introduce themselves by name and role at the start of the conversation?' },
+            { num: 'IV',   name: 'Be Concise',                   desc: 'Short phrases, repeat key points',
+              query: 'Did the clinician use short, simple sentences and avoid medical jargon or long-winded explanations?' },
+            { num: 'V',    name: 'Identify Wants & Feelings',    desc: 'Ask what they want, how they feel',
+              query: 'Did the clinician directly ask the patient what they wanted or how they were feeling?' },
+            { num: 'VI',   name: 'Listen Actively',              desc: "Don\u2019t argue, reflect back what you hear",
+              query: "Did the clinician reflect back or paraphrase the patient's concerns to show understanding, rather than arguing?" },
+            { num: 'VII',  name: 'Set Limits & Offer Choices',   desc: 'Clear boundaries with alternatives',
+              query: 'Did the clinician offer the patient specific choices or alternatives (for example, "would you like X or Y")?' },
+            { num: 'VIII', name: 'Agree or Agree to Disagree',   desc: 'Find common ground',
+              query: "Did the clinician validate or agree with something in the patient's feelings or experience?" },
+            { num: 'IX',   name: 'Prepared Show of Support',     desc: 'Team visible but non-threatening',
+              query: 'Did the clinician verbally express commitment to helping the patient (for example, "I\'m here for you" or "we\'ll figure this out together")?' },
+            { num: 'X',    name: 'Debrief Intent',               desc: 'Communicate next steps clearly',
+              query: 'Did the clinician clearly explain what would happen next or outline concrete next steps?' }
         ];
 
         // ─── SCREEN NAVIGATION ───
@@ -1014,41 +1157,34 @@
             showSession();
             startTimer();
 
-            // Reset video area to loading state
-            document.getElementById('session-video-area').innerHTML = `
-                <div class="session-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                        <rect x="2" y="4" width="20" height="14" rx="2"/>
-                        <path d="M12 18v3M8 21h8"/>
-                    </svg>
-                    <p>Connecting to ${currentPatient.name}...</p>
-                </div>
-            `;
+            const iframeContainer = document.getElementById('session-iframe-container');
+            const loadingOverlay = document.getElementById('session-loading-overlay');
+            const loadingTitle   = document.getElementById('session-loading-title');
+            const loadingMsg     = document.getElementById('session-loading-message');
 
-            // Create Tavus conversation via API
-            const statusEl = document.getElementById('session-video-area');
-            const showStatus = (msg) => {
-                statusEl.querySelector('p').textContent = msg;
-            };
+            // Reset UI
+            iframeContainer.innerHTML = '';
+            loadingOverlay.classList.remove('hidden');
+            loadingTitle.textContent = 'Preparing your session';
+            loadingMsg.textContent   = `Connecting to ${currentPatient.name}`;
 
             try {
-                showStatus(`Calling Tavus API for ${currentPatient.name}...`);
-
                 const response = await fetch(CONFIG.PROXY_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         replica_id: currentPatient.replica_id,
                         persona_id: currentPatient.persona_id,
-                        custom_greeting: "I've been lying here in pain for hours. Nobody seems to think that matters. When in the world am I getting help around here?!"
+                        custom_greeting: "I've been lying here in pain for hours. Nobody seems to think that matters. When in the world am I getting help around here?!",
+                        properties: {
+                            // Each commandment becomes one perception query (matched by index)
+                            perception_analysis_queries: COMMANDMENTS.map(c => c.query)
+                        }
                     })
                 });
 
                 const responseText = await response.text();
-                console.log('Tavus API status:', response.status);
-                console.log('Tavus API response:', responseText);
+                console.log('Session create status:', response.status);
 
                 if (!response.ok) {
                     throw new Error(`API ${response.status}: ${responseText.substring(0, 200)}`);
@@ -1056,34 +1192,42 @@
 
                 const data = JSON.parse(responseText);
 
-                if (data.conversation_url) {
-                    currentConversationId = data.conversation_id;
-                    sessionConnected = true;
-                    showStatus(`Got conversation URL, loading video...`);
-                    statusEl.innerHTML = `
-                        <iframe
-                            src="${data.conversation_url}"
-                            allow="camera; microphone; autoplay; display-capture"
-                            allowfullscreen
-                            style="width:100%;height:100%;border:none;"
-                        ></iframe>
-                    `;
-                } else {
-                    // API returned 200 but no conversation_url
+                if (!data.conversation_url) {
                     throw new Error(`No conversation_url in response: ${JSON.stringify(data).substring(0, 300)}`);
                 }
+
+                currentConversationId = data.conversation_id;
+                sessionConnected = true;
+
+                loadingTitle.textContent = 'Almost there';
+                loadingMsg.textContent   = 'Loading video connection';
+
+                // Inject the iframe behind the overlay
+                const iframe = document.createElement('iframe');
+                iframe.src = data.conversation_url;
+                iframe.allow = 'camera; microphone; autoplay; display-capture';
+                iframe.allowFullscreen = true;
+                iframeContainer.appendChild(iframe);
+
+                // Keep our branded overlay on top until the CVI app is past its own splash,
+                // then fade ours out. Iframe.onload fires when the page shell loads; add a
+                // buffer so the vendor's in-iframe loader finishes before we reveal it.
+                let faded = false;
+                const fadeOverlay = () => {
+                    if (faded) return;
+                    faded = true;
+                    loadingOverlay.classList.add('hidden');
+                };
+                iframe.addEventListener('load', () => {
+                    setTimeout(fadeOverlay, 4000);
+                });
+                // Hard fallback so the overlay can't hang forever
+                setTimeout(fadeOverlay, 15000);
+
             } catch (err) {
-                console.error('Failed to create conversation:', err);
-                statusEl.innerHTML = `
-                    <div class="session-placeholder">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 8v4M12 16h.01"/>
-                        </svg>
-                        <p>Unable to connect.</p>
-                        <p style="font-size:0.75rem; margin-top:0.5rem; opacity:0.7; word-break:break-all; max-width:90%; padding:0 1rem;">${err.message}</p>
-                    </div>
-                `;
+                console.error('Failed to create session:', err);
+                loadingTitle.textContent = 'Unable to connect';
+                loadingMsg.textContent   = err.message;
             }
         }
 
@@ -1092,9 +1236,12 @@
             stopTimer();
 
             // Kill the iframe immediately to stop video/audio
-            document.getElementById('session-video-area').innerHTML = '';
+            document.getElementById('session-iframe-container').innerHTML = '';
+            document.getElementById('session-loading-overlay').classList.add('hidden');
 
-            // End the conversation on Tavus backend
+            const endedConversationId = currentConversationId;
+
+            // Signal the session backend to close the conversation
             if (currentConversationId) {
                 try {
                     await fetch(CONFIG.PROXY_URL, {
@@ -1106,51 +1253,166 @@
                         })
                     });
                 } catch (err) {
-                    console.error('Failed to end conversation:', err);
+                    console.error('Failed to end session:', err);
                 }
                 currentConversationId = null;
             }
 
             document.getElementById('results-patient-name').textContent = currentPatient.name;
-            renderResults();
-            showResults();
-        }
 
-        function renderResults() {
-            const warningEl = document.getElementById('results-warning');
-            const overallEl = document.getElementById('overall-score');
-            const scoresEl = document.getElementById('results-scores');
+            // Show results screen with the analyzing overlay visible, content hidden
+            document.getElementById('analyzing-overlay').style.display = 'block';
+            document.getElementById('results-content').style.display   = 'none';
+            showResults();
 
             const validSession = sessionConnected && sessionSeconds >= 30;
 
-            // Warning if session didn't really happen
+            if (!validSession || !endedConversationId) {
+                // Skip polling; render fallback immediately
+                renderResults(null, validSession);
+                return;
+            }
+
+            // Poll for perception analysis results
+            const analysis = await pollForAnalysis(endedConversationId);
+            renderResults(analysis, validSession);
+        }
+
+        // Poll the session backend for perception_analysis results.
+        // Returns array of { query, answer } objects, or null on timeout/failure.
+        async function pollForAnalysis(conversationId) {
+            const MAX_ATTEMPTS = 30;   // ~90s at 3s interval
+            const INTERVAL_MS  = 3000;
+
+            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                try {
+                    const resp = await fetch(CONFIG.PROXY_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'get',
+                            conversation_id: conversationId
+                        })
+                    });
+
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const results = extractPerceptionResults(data);
+                        if (results && results.length > 0) {
+                            console.log('Analysis ready after', attempt + 1, 'attempts');
+                            return results;
+                        }
+                    } else {
+                        console.warn('Poll attempt failed with status', resp.status);
+                    }
+                } catch (err) {
+                    console.warn('Poll attempt error:', err.message);
+                }
+
+                await new Promise(r => setTimeout(r, INTERVAL_MS));
+            }
+
+            console.warn('Analysis polling timed out');
+            return null;
+        }
+
+        // Defensive extraction — the analysis can arrive under different keys depending
+        // on the CVI response schema. Check several known locations.
+        function extractPerceptionResults(data) {
+            if (!data) return null;
+
+            const candidates = [
+                data.perception_analysis,
+                data.perception_analysis_results,
+                data?.conversation?.perception_analysis,
+                data?.analysis?.perception_analysis,
+                data?.events?.filter?.(e => e?.event_type === 'perception_analysis' || e?.type === 'perception_analysis')?.[0]?.properties
+            ];
+
+            for (const c of candidates) {
+                if (!c) continue;
+                // Normalize to an array of { query, answer }
+                if (Array.isArray(c) && c.length > 0 && (c[0].query || c[0].answer)) {
+                    return c.map(r => ({ query: r.query || '', answer: r.answer || r.response || '' }));
+                }
+                if (c.results && Array.isArray(c.results)) {
+                    return c.results.map(r => ({ query: r.query || '', answer: r.answer || r.response || '' }));
+                }
+                // Object keyed by query text
+                if (typeof c === 'object' && !Array.isArray(c)) {
+                    const entries = Object.entries(c);
+                    if (entries.length > 0) {
+                        return entries.map(([query, answer]) => ({
+                            query,
+                            answer: typeof answer === 'string' ? answer : (answer?.answer || JSON.stringify(answer))
+                        }));
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Map a natural-language answer to { rating, cssClass, points }.
+        function scoreAnswer(answer) {
+            const a = (answer || '').toLowerCase().trim();
+            if (!a) return { rating: 'Pending', cssClass: 'na', points: 0 };
+
+            // Check "partial" patterns first so "yes, partially" doesn't count as full yes
+            if (/\b(partial(ly)?|somewhat|to some (degree|extent)|attempt(ed)?|briefly|at times|inconsistent(ly)?)\b/.test(a)) {
+                return { rating: 'Partially Met', cssClass: 'partial', points: 5 };
+            }
+            if (/^(yes|y\b)/.test(a) || /\b(did|demonstrated|maintained|offered|asked|reflected|validated|introduced|expressed|explained)\b/.test(a) && !/\b(did not|didn'?t|never|failed to)\b/.test(a)) {
+                return { rating: 'Met', cssClass: 'good', points: 10 };
+            }
+            if (/^(no|n\b)/.test(a) || /\b(did not|didn'?t|never|failed to|no evidence)\b/.test(a)) {
+                return { rating: 'Not Met', cssClass: 'missed', points: 0 };
+            }
+            return { rating: 'Pending', cssClass: 'na', points: 0 };
+        }
+
+        function renderResults(analysis, validSession) {
+            const warningEl = document.getElementById('results-warning');
+            const overallEl = document.getElementById('overall-score');
+            const scoresEl  = document.getElementById('results-scores');
+
+            // Reveal the content, hide the analyzing overlay
+            document.getElementById('analyzing-overlay').style.display = 'none';
+            document.getElementById('results-content').style.display   = 'block';
+
+            // Warning messaging
             if (!validSession) {
                 warningEl.innerHTML = `<div class="session-warning">
                     Session did not complete${!sessionConnected ? ' &mdash; unable to connect to patient' : ' &mdash; session was too short (under 30 seconds)'}.
                     Scores cannot be assessed. Try again with a full session.
                 </div>`;
+            } else if (!analysis) {
+                warningEl.innerHTML = `<div class="session-warning">
+                    Scoring is still processing. Your session was recorded &mdash; try refreshing this page in a minute to see your results.
+                </div>`;
             } else {
                 warningEl.innerHTML = '';
             }
 
-            // Build score rows
-            // TODO: Replace with real Tavus perception_analysis_queries results
+            // Build score rows, matching each commandment to its query result by index
             let rows = '';
             let totalPoints = 0;
             const maxPoints = COMMANDMENTS.length * 10;
 
-            COMMANDMENTS.forEach(cmd => {
+            COMMANDMENTS.forEach((cmd, i) => {
                 let rating, cssClass, points;
+
                 if (!validSession) {
-                    rating = 'N/A';
-                    cssClass = 'na';
-                    points = 0;
+                    rating = 'N/A'; cssClass = 'na'; points = 0;
+                } else if (!analysis) {
+                    rating = 'Pending'; cssClass = 'na'; points = 0;
                 } else {
-                    // Placeholder: will be replaced with real API scoring
-                    rating = 'Pending';
-                    cssClass = 'na';
-                    points = 0;
+                    const result = analysis[i];
+                    const scored = scoreAnswer(result?.answer);
+                    rating   = scored.rating;
+                    cssClass = scored.cssClass;
+                    points   = scored.points;
                 }
+
                 totalPoints += points;
                 rows += `<div class="score-row">
                     <span class="score-label"><strong>${cmd.num}.</strong> ${cmd.name} &mdash; ${cmd.desc}</span>
@@ -1161,15 +1423,20 @@
             scoresEl.innerHTML = rows;
 
             // Overall score
-            const pct = validSession ? Math.round((totalPoints / maxPoints) * 100) : 0;
+            const pct = (validSession && analysis) ? Math.round((totalPoints / maxPoints) * 100) : 0;
             let circleClass = 'none';
-            if (validSession) {
+            if (validSession && analysis) {
                 circleClass = pct >= 70 ? 'good' : pct >= 40 ? 'fair' : 'poor';
             }
 
+            let overallLabel;
+            if (!validSession)       overallLabel = 'No Session Data';
+            else if (!analysis)      overallLabel = 'Scoring In Progress';
+            else                     overallLabel = 'Overall Score';
+
             overallEl.innerHTML = `
                 <div class="overall-score-circle ${circleClass}">${pct}%</div>
-                <div class="overall-score-label">${validSession ? 'Overall Score' : 'No Session Data'}</div>
+                <div class="overall-score-label">${overallLabel}</div>
             `;
         }
     </script>
