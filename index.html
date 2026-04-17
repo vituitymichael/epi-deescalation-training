@@ -958,7 +958,7 @@
             <div class="analyzing-overlay" id="analyzing-overlay">
                 <img src="images/owledge-owl.png" alt="Owledge Lab">
                 <h3>Analyzing your session<span class="loading-dots" style="color: var(--vituity-navy);"><span></span><span></span><span></span></span></h3>
-                <p>Reviewing your performance across the Ten Commandments of De-escalation. This usually takes under a minute.</p>
+                <p id="analyzing-message">Reviewing your performance across the Ten Commandments of De-escalation. This usually takes 2-3 minutes.</p>
             </div>
 
             <!-- Actual results (revealed once scoring completes) -->
@@ -1277,10 +1277,16 @@
         // Poll the session backend for perception_analysis results.
         // Returns array of { query, answer } objects, or null on timeout/failure.
         async function pollForAnalysis(conversationId) {
-            const MAX_ATTEMPTS = 30;   // ~90s at 3s interval
-            const INTERVAL_MS  = 3000;
+            const MAX_ATTEMPTS = 50;   // ~250s at 5s interval (perception analysis can take 2-4 min)
+            const INTERVAL_MS  = 5000;
+            const analyzingMsg = document.getElementById('analyzing-message');
 
             for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                // Update the user after 30s so they know it's still working
+                if (attempt === 6 && analyzingMsg) {
+                    analyzingMsg.textContent = 'Still analyzing your session... this usually takes 2-3 minutes.';
+                }
+
                 try {
                     const resp = await fetch(CONFIG.PROXY_URL, {
                         method: 'POST',
@@ -1293,6 +1299,7 @@
 
                     if (resp.ok) {
                         const data = await resp.json();
+                        console.log('Poll attempt', attempt + 1, '- events:', data?.events?.map(e => e.event_type));
                         const results = extractPerceptionResults(data);
                         if (results && results.length > 0) {
                             console.log('Analysis ready after', attempt + 1, 'attempts');
@@ -1308,7 +1315,7 @@
                 await new Promise(r => setTimeout(r, INTERVAL_MS));
             }
 
-            console.warn('Analysis polling timed out');
+            console.warn('Analysis polling timed out after', MAX_ATTEMPTS, 'attempts');
             return null;
         }
 
@@ -1383,34 +1390,41 @@
         }
 
         // Parse a perception analysis text blob into per-commandment answers.
-        // The blob has bold headings for each query. We split on heading boundaries
-        // and map sections to commandments by order (index).
+        // Tavus returns markdown like:
+        //   *   **Did the clinician...?**
+        //       Yes, the clinician...
+        //   *   **Did the clinician...?**
+        //       No, the clinician did not...
         function parseAnalysisBlob(text) {
-            // Split on markdown bold headings: **Some Heading:**
-            const sections = text.split(/\*\*[^*]+\*\*:?\s*/);
-            // First element is empty (before the first heading), skip it
-            const answers = sections.filter(s => s.trim().length > 0);
+            // Split on bold markdown headings: **...**
+            // This separates the text into [intro, answer1, answer2, ...]
+            const sections = text.split(/\*{2}[^*]+\*{2}\s*/);
 
-            if (answers.length === 0) {
-                // No bold headings found; try splitting on double newlines
-                const parts = text.split(/\n\n+/).filter(s => s.trim().length > 0);
-                if (parts.length >= COMMANDMENTS.length) {
-                    return parts.slice(0, COMMANDMENTS.length).map((a, i) => ({
-                        query: COMMANDMENTS[i].query,
-                        answer: a.trim()
-                    }));
-                }
-                // Single blob - return as one answer for commandment I so caller knows analysis exists
+            // First element is intro text before the first heading; skip it.
+            // Clean up trailing bullet markers (* ) from each answer.
+            const answers = sections.slice(1)
+                .map(s => s.replace(/\n\s*\*\s*$/, '').trim());
+
+            if (answers.length > 0) {
                 return COMMANDMENTS.map((cmd, i) => ({
                     query: cmd.query,
-                    answer: i === 0 ? text.trim() : ''
+                    answer: (answers[i] || '').trim()
                 }));
             }
 
-            // Map each section to a commandment by index
+            // Fallback: no bold headings found, try splitting on double newlines
+            const parts = text.split(/\n\n+/).filter(s => s.trim().length > 0);
+            if (parts.length >= COMMANDMENTS.length) {
+                return parts.slice(0, COMMANDMENTS.length).map((a, i) => ({
+                    query: COMMANDMENTS[i].query,
+                    answer: a.trim()
+                }));
+            }
+
+            // Last resort: treat entire blob as a single analysis
             return COMMANDMENTS.map((cmd, i) => ({
                 query: cmd.query,
-                answer: (answers[i] || '').trim()
+                answer: i === 0 ? text.trim() : ''
             }));
         }
 
