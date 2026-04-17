@@ -1175,11 +1175,7 @@
                     body: JSON.stringify({
                         replica_id: currentPatient.replica_id,
                         persona_id: currentPatient.persona_id,
-                        custom_greeting: "I've been lying here in pain for hours. Nobody seems to think that matters. When in the world am I getting help around here?!",
-                        properties: {
-                            // Each commandment becomes one perception query (matched by index)
-                            perception_analysis_queries: COMMANDMENTS.map(c => c.query)
-                        }
+                        custom_greeting: "I've been lying here in pain for hours. Nobody seems to think that matters. When in the world am I getting help around here?!"
                     })
                 });
 
@@ -1321,35 +1317,101 @@
         function extractPerceptionResults(data) {
             if (!data) return null;
 
-            const candidates = [
+            // 1. Try structured array/object formats first (legacy or future structured API)
+            const structuredCandidates = [
                 data.perception_analysis,
                 data.perception_analysis_results,
                 data?.conversation?.perception_analysis,
-                data?.analysis?.perception_analysis,
-                data?.events?.filter?.(e => e?.event_type === 'perception_analysis' || e?.type === 'perception_analysis')?.[0]?.properties
+                data?.analysis?.perception_analysis
             ];
 
-            for (const c of candidates) {
+            for (const c of structuredCandidates) {
                 if (!c) continue;
-                // Normalize to an array of { query, answer }
                 if (Array.isArray(c) && c.length > 0 && (c[0].query || c[0].answer)) {
                     return c.map(r => ({ query: r.query || '', answer: r.answer || r.response || '' }));
                 }
                 if (c.results && Array.isArray(c.results)) {
                     return c.results.map(r => ({ query: r.query || '', answer: r.answer || r.response || '' }));
                 }
-                // Object keyed by query text
-                if (typeof c === 'object' && !Array.isArray(c)) {
-                    const entries = Object.entries(c);
-                    if (entries.length > 0) {
-                        return entries.map(([query, answer]) => ({
-                            query,
-                            answer: typeof answer === 'string' ? answer : (answer?.answer || JSON.stringify(answer))
+            }
+
+            // 2. Find the perception analysis text blob from verbose GET response.
+            //    It can appear as a top-level key, inside an events array, or nested.
+            let analysisText = null;
+
+            // Check top-level keys (verbose GET may use dotted or nested keys)
+            const paEvent = data['application.perception_analysis']
+                         || data['application_perception_analysis'];
+            if (paEvent?.properties?.analysis) {
+                analysisText = paEvent.properties.analysis;
+            }
+
+            // Check events array
+            if (!analysisText && Array.isArray(data.events)) {
+                const evt = data.events.find(e =>
+                    e?.event_type === 'application.perception_analysis'
+                    || e?.event_type === 'perception_analysis'
+                    || e?.type === 'perception_analysis'
+                );
+                if (evt?.properties?.analysis) {
+                    analysisText = evt.properties.analysis;
+                } else if (evt?.properties && typeof evt.properties === 'object') {
+                    // Fallback: properties might be the structured object itself
+                    const entries = Object.entries(evt.properties);
+                    if (entries.length >= COMMANDMENTS.length) {
+                        return entries.slice(0, COMMANDMENTS.length).map(([q, a]) => ({
+                            query: q,
+                            answer: typeof a === 'string' ? a : JSON.stringify(a)
                         }));
                     }
                 }
             }
+
+            // Check nested under perception_analysis directly
+            if (!analysisText && typeof data.perception_analysis === 'string') {
+                analysisText = data.perception_analysis;
+            }
+
+            // 3. Parse text blob into sections matched by commandment index.
+            //    Format: "**Heading:** answer text\n\n**Heading:** answer text"
+            if (analysisText) {
+                console.log('Raw perception analysis text:', analysisText);
+                return parseAnalysisBlob(analysisText);
+            }
+
             return null;
+        }
+
+        // Parse a perception analysis text blob into per-commandment answers.
+        // The blob has bold headings for each query. We split on heading boundaries
+        // and map sections to commandments by order (index).
+        function parseAnalysisBlob(text) {
+            // Split on markdown bold headings: **Some Heading:**
+            const sections = text.split(/\*\*[^*]+\*\*:?\s*/);
+            // First element is empty (before the first heading), skip it
+            const answers = sections.filter(s => s.trim().length > 0);
+
+            if (answers.length === 0) {
+                // No bold headings found; try splitting on double newlines
+                const parts = text.split(/\n\n+/).filter(s => s.trim().length > 0);
+                if (parts.length >= COMMANDMENTS.length) {
+                    return parts.slice(0, COMMANDMENTS.length).map((a, i) => ({
+                        query: COMMANDMENTS[i].query,
+                        answer: a.trim()
+                    }));
+                }
+                // Single blob - return as one answer for commandment I so caller knows analysis exists
+                return COMMANDMENTS.map((cmd, i) => ({
+                    query: cmd.query,
+                    answer: i === 0 ? text.trim() : ''
+                }));
+            }
+
+            // Map each section to a commandment by index
+            return COMMANDMENTS.map((cmd, i) => ({
+                query: cmd.query,
+                answer: (answers[i] || '').trim()
+            }));
         }
 
         // Map a natural-language answer to { rating, cssClass, points }.
